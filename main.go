@@ -39,13 +39,8 @@ func main() {
 		title := "New ip detected"
 		description := fmt.Sprintf("||`%s`||", info.IP)
 
-		// Check info is not exist
-		if prevInfo == nil {
-			title = "Started"
-		}
-
 		// Check info is changed
-		if prevInfo != nil && prevInfo.IP == info.IP {
+		if prevInfo.IP == info.IP {
 			return
 		}
 
@@ -72,6 +67,44 @@ func main() {
 		panic(err)
 	}
 
+	// Start first run
+
+	// Get info
+	info, err := ipinfo.GetInfo()
+	if err != nil {
+		errChan <- err
+		return
+	}
+
+	// Set default embed title and description
+	title := "Started with ip"
+	description := fmt.Sprintf("||`%s`||", info.IP)
+
+	// Check info is changed
+	if prevInfo != nil && prevInfo.IP == info.IP {
+		return
+	}
+
+	msg := &webhook.Message{
+		Embeds: &[]webhook.Embed{
+			{
+				Title:       &title,
+				Description: &description,
+			},
+		},
+	}
+
+	// Send message
+	err = webhook.SendMessage(wh_url, msg)
+	if err != nil {
+		errChan <- err
+		return
+	}
+
+	// Save info
+	prevInfo = info
+
+	// Start runner
 	runner.Start()
 
 	for {
